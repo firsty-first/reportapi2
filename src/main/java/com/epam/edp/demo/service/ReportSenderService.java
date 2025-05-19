@@ -328,7 +328,80 @@ public class ReportSenderService {
     }
 
     private void sendTwoCsvReportsViaSes(SesClient sesClient, byte[] locationCsv, byte[] waiterCsv, String fromEmail, String toEmail) throws Exception {
+        System.out.println("Inside sent csv report via ses");
+        Session session = Session.getDefaultInstance(new Properties());
 
+        MimeMessage mimeMessage = new MimeMessage(session);
+
+        mimeMessage.setSubject("Weekly Reports of Location & Waiter");
+
+        mimeMessage.setFrom(new InternetAddress(fromEmail));
+
+        mimeMessage.setRecipient(Message.RecipientType.TO, new InternetAddress(toEmail));
+
+        // Body (text) part
+
+        MimeBodyPart htmlBodyPart = new MimeBodyPart();
+
+        LocalDate today = LocalDate.now();
+        String currentStartStr = today.minusDays(7).toString();
+        String currentEndStr = today.toString();
+
+        Context context = new Context();
+        context.setVariable("startDate", currentStartStr);
+        context.setVariable("endDate", currentEndStr);
+        String htmlContent = templateEngine.process("weekly-report", context);
+
+        htmlBodyPart.setContent(htmlContent, "text/html; charset=UTF-8");
+
+
+        // 1) Location CSV
+
+        MimeBodyPart locationAttachment = new MimeBodyPart();
+
+        locationAttachment.setFileName("location_report.csv");
+
+        locationAttachment.setContent(locationCsv, "text/csv");
+
+        // 2) Waiter CSV
+
+        MimeBodyPart waiterAttachment = new MimeBodyPart();
+
+        waiterAttachment.setFileName("waiter_report.csv");
+
+        waiterAttachment.setContent(waiterCsv, "text/csv");
+
+        Multipart multipart = new MimeMultipart();
+
+        multipart.addBodyPart(htmlBodyPart);
+
+        multipart.addBodyPart(locationAttachment);
+
+        multipart.addBodyPart(waiterAttachment);
+
+        mimeMessage.setContent(multipart);
+
+        // Convert to raw
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        mimeMessage.writeTo(outputStream);
+
+        RawMessage rawMessage = RawMessage.builder()
+
+                .data(SdkBytes.fromByteArray(outputStream.toByteArray()))
+
+                .build();
+
+        // Finally send
+
+        SendRawEmailRequest rawEmailRequest = SendRawEmailRequest.builder()
+
+                .rawMessage(rawMessage)
+
+                .build();
+
+        sesClient.sendRawEmail(rawEmailRequest);
 
     }
 
