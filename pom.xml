@@ -23,6 +23,18 @@
         <java.version>17</java.version>
         <aws.sdk.version>2.31.29</aws.sdk.version>
     </properties>
+    <repositories>
+        <repository>
+            <id>central</id>
+            <url>https://repo.maven.apache.org/maven2</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
     <dependencyManagement>
 
         <dependencies>
